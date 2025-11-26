@@ -6,7 +6,9 @@ import { CommentDisplay } from '../components/CommentDisplay';
 import { CommentSearch } from '../components/CommentSearch'; // 新しくインポート
 
 // FastAPIのURLを定義
-const YOUTUBE_API_URL = 'http://localhost:8000/api/comments';
+// const YOUTUBE_API_URL = 'http://localhost:8000/api/comments'; // 開発環境時のURL
+const YOUTUBE_API_URL = 'https://backend-904463184290.asia-northeast1.run.app/api/comments'; // 本番環境用のURL（GitHub Pagesなど）
+
 
 export default function Home() {
   const [apiData, setApiData] = useState(null);
