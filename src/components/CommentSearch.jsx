@@ -2,40 +2,18 @@
 'use client';
 
 import React, { useState } from 'react';
+// Server Actionをインポート (パスは src/app/actions.js を想定)
+import { searchCommentsWithGemini } from '../app/actions';
 
-/**
- * コメント検索コンポーネント。ユーザー入力を受け付け、Gemini APIを呼び出します。
- * @param {Array} comments - YouTube APIから取得したコメントの配列
- * @param {function} onSearchResult - 検索結果のJSON文字列を受け取るコールバック関数
+/** 
+ * コメント検索コンポーネント。ユーザー入力を受け付け、Server Action経由でGemini APIを呼び出します。 
+ * @param {Array} comments - YouTube APIから取得したコメントの配列 
+ * @param {function} onSearchResult - 検索結果のJSON文字列を受け取るコールバック関数 
  */
 export const CommentSearch = ({ comments, onSearchResult }) => {
   const [keyword, setKeyword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-
-  // Gemini APIのURL定義
-  // NOTE: Canvas環境ではAPIキーは実行時に自動で補完されるため、空文字列を使用します。
-  const apiKey = "AIzaSyDBD2qFPAKVQh5dLecSnlXlu87iSVR9XJo"; 
-  const GEMINI_API_MODEL = "gemini-2.5-flash-preview-09-2025";
-  const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_API_MODEL}:generateContent?key=${apiKey}`;
-
-  // コメント配列とキーワードを元に、Geminiへ渡すプロンプトを作成する関数
-  const createPrompt = (keyword, comments) => {
-    // 最初の500件のコメントのみを抽出してJSON化し、プロンプトのサイズを制限します
-    const commentsToAnalyze = comments.slice(0, 500); 
-    const commentsString = JSON.stringify(commentsToAnalyze, null, 2);
-
-    return `
-      以下の【コメント配列】の中から、textプロパティの値に"${keyword}"が含まれるオブジェクトのみを抽出してください。
-      
-      【制約事項】
-      1. 結果は抽出されたオブジェクトの配列を含むJSON文字列として、他の説明文やマークダウンを付けずに**そのまま出力**してください。
-      2. 抽出対象は、必ずtextプロパティにキーワードが含まれているものに限定してください。
-
-      【コメント配列】
-      ${commentsString}
-    `;
-  };
 
   const handleSearch = async () => {
     if (!keyword.trim() || !comments || comments.length === 0) {
@@ -46,37 +24,18 @@ export const CommentSearch = ({ comments, onSearchResult }) => {
     setIsLoading(true);
     setError(null);
 
-    const prompt = createPrompt(keyword, comments);
-    console.log('Geminiに渡すプロンプト（一部抜粋）:', prompt.substring(0, 500) + '...');
-    
-    // Gemini APIへの直接呼び出し
     try {
-      const payload = {
-          contents: [{ parts: [{ text: prompt }] }],
-      };
+      // クライアント側でのAPIキー管理やプロンプト作成は廃止し、
+      // サーバーアクションにキーワードとデータを渡して処理を依頼します。
+      // これによりAPIキーがブラウザに露出するのを防ぎます。
+      const result = await searchCommentsWithGemini(keyword, comments);
 
-      const response = await fetch(GEMINI_API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-      
-      // Geminiのレスポンスからテキスト部分を抽出
-      const filteredCommentsJson = result.candidates?.[0]?.content?.parts?.[0]?.text;
-
-      if (filteredCommentsJson) {
-          // 抽出したJSON文字列を親コンポーネントに渡す
-          onSearchResult(filteredCommentsJson); 
+      if (result.success) {
+        // 成功した場合、抽出されたJSON文字列を親コンポーネントに渡す
+        onSearchResult(result.data);
       } else {
-          throw new Error("Gemini APIからのレスポンス形式が不正です。");
+        // サーバー側でエラーが発生した場合
+        throw new Error(result.error || "Gemini APIからの応答が不正です。");
       }
 
     } catch (e) {
