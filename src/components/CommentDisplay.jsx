@@ -163,7 +163,7 @@ export const CommentDisplay = ({ apiData, searchResultJson }) => {
       )}
 
       {/* 3. 全コメントリストエリア */}
-      <h3 className="text-xl font-bold mt-10 mb-4 text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700">
+      <h3 className="text-xl font-bold mt-10 mb-4 text-gray-800 dark:text-gray-100 ">
         コメント一覧 <span className="text-sm font-normal text-gray-500 ml-2">({apiData.comments?.length} 件)</span>
       </h3>
       
