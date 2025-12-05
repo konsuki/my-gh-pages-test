@@ -1,8 +1,8 @@
 # コメント取得用API
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query  # Queryを追加
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 import os
 import json
 import google.generativeai as genai
@@ -40,6 +40,7 @@ app.add_middleware(
 )
 
 # --- Application Constants ---
+# デフォルト値として残しておきます
 VIDEO_ID = "fmFn2otWosE"
 GOAL_MAX_RESULTS = 1000
 
@@ -52,20 +53,21 @@ class SearchRequest(BaseModel):
 
 @app.get("/api/comments")
 async def get_video_comments_api(
-    video_id: str = VIDEO_ID, goal_max_results: int = GOAL_MAX_RESULTS
+    # クエリパラメータ video_id を受け取る。指定がない場合はデフォルトのVIDEO_IDを使用。
+    video_id: str = Query(VIDEO_ID, description="YouTube Video ID"),
+    goal_max_results: int = GOAL_MAX_RESULTS
 ) -> Dict[str, Any]:
     """
     YouTube動画のコメントを、nextPageTokenを利用して目標件数まで取得し、JSONで返します。
-    ロジックは youtube_service.fetch_comments_with_pagination に委譲します。
+    クエリパラメータ ?video_id=XXX で動画を指定可能です。
     """
-    # ロジック部分の関数を呼び出す
+    # 受け取った video_id をサービスロジックに渡す
     return youtube_service.fetch_comments_with_pagination(video_id, goal_max_results)
 
 
 @app.get("/api/hello")
 async def read_hello_compatibility() -> Dict[str, Any]:
-    """/api/hello は /api/comments の結果を返します。"""
-    # ロジック部分の関数を呼び出す
+    """/api/hello は /api/comments の結果を返します（互換性のため維持）。"""
     return youtube_service.fetch_comments_with_pagination(VIDEO_ID, GOAL_MAX_RESULTS)
 
 
@@ -91,8 +93,6 @@ async def search_comments_with_gemini(request: SearchRequest) -> Dict[str, Any]:
 
     try:
         # 3. モデルの準備
-        # Python SDKで 'gemini-2.5-flash' が利用不可の場合に備え、
-        # エラーが出る場合は 'gemini-1.5-flash' や 'gemini-pro' に変更してください。
         model = genai.GenerativeModel("gemini-2.5-flash")
 
         # 4. データのスライス（トークン制限対策）
@@ -111,8 +111,7 @@ async def search_comments_with_gemini(request: SearchRequest) -> Dict[str, Any]:
         {comments_string}
         """
 
-        # 6. 【重要】非同期メソッドを使用し、awaitする
-        # generate_content ではなく generate_content_async を使用
+        # 6. 非同期メソッドを使用し、awaitする
         response = await model.generate_content_async(prompt)
         
         # 7. 結果の取得とクリーニング
