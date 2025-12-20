@@ -7,6 +7,7 @@ import { Header } from '../../components/Header';
 import { HeroSection } from '../../components/LP/HeroSection';
 import { FeaturesAndWorkflow } from '../../components/LP/FeaturesAndWorkflow';
 import { UseCaseTabs } from '../../components/LP/UseCaseTabs';
+import { Footer } from '../../components/Footer'
 
 // --- 既存の機能コンポーネントのインポート (site2) ---
 import { CommentDisplay } from '../../components/CommentDisplay';
@@ -56,41 +57,6 @@ const TestimonialsSection = () => (
     </div>
   </section>
 );
-
-// --- フッターコンポーネント (ファイル内定義) ---
-const Footer = () => (
-  <footer className="bg-gray-900 text-white pt-16 pb-8">
-    <div className="container mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
-      <div>
-        <h4 className="font-bold mb-4">製品</h4>
-        <ul className="text-gray-400 text-sm space-y-2">
-          <li><a href="#" className="hover:text-white">機能一覧</a></li>
-          <li><a href="#" className="hover:text-white">APIドキュメント</a></li>
-          <li><a href="#" className="hover:text-white">料金プラン</a></li>
-        </ul>
-      </div>
-      <div>
-        <h4 className="font-bold mb-4">サポート</h4>
-        <ul className="text-gray-400 text-sm space-y-2">
-          <li><a href="#" className="hover:text-white">ヘルプセンター</a></li>
-          <li><a href="#" className="hover:text-white">お問い合わせ</a></li>
-        </ul>
-      </div>
-      <div>
-        <h4 className="font-bold mb-4">法的情報</h4>
-        <ul className="text-gray-400 text-sm space-y-2">
-          <li><a href="/legal" className="hover:text-yellow-400">特定商取引法に基づく表記</a></li>
-          <li><a href="#" className="hover:text-white">利用規約</a></li>
-          <li><a href="#" className="hover:text-white">プライバシーポリシー</a></li>
-        </ul>
-      </div>
-    </div>
-    <div className="container mx-auto px-4 border-t border-gray-800 pt-8 text-center text-gray-500 text-sm">
-      © 2024 YouTube Comment AI Analyzer. All rights reserved.
-    </div>
-  </footer>
-);
-
 
 // === メインページコンポーネント ===
 export default function Home() {

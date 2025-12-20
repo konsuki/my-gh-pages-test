@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 
 // JWTトークンの中身(ペイロード)をデコードするヘルパー関数
@@ -23,29 +23,45 @@ const parseJwt = (token) => {
 
 export const Header = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userInfo, setUserInfo] = useState({ email: '', picture: '' }); // ユーザー情報を格納
+  const [userInfo, setUserInfo] = useState({ email: '', picture: '' });
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  
+  // メニューエリアの参照用Ref
+  const menuRef = useRef(null);
 
   useEffect(() => {
-    // マウント時にローカルストレージからトークンを取得
+    // 1. ログイン状態のチェック
     const token = localStorage.getItem('accessToken');
-    
     if (token) {
-      // トークンがあればデコードしてユーザー情報を取得
       const decoded = parseJwt(token);
       if (decoded) {
         setIsLoggedIn(true);
         setUserInfo({
           email: decoded.email,
-          picture: decoded.picture // GoogleのアイコンURL
+          picture: decoded.picture
         });
       } else {
-        // トークンが不正な場合はログアウト扱いにする
         localStorage.removeItem('accessToken');
         setIsLoggedIn(false);
       }
     }
-  }, []);
+
+    // 2. 「メニュー外クリック」を検知して閉じる処理
+    const handleClickOutside = (event) => {
+      // メニューが開いており、かつクリックされた場所がmenuRef(ボタンやメニュー)の外側なら閉じる
+      if (isUserMenuOpen && menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+
+    // ドキュメント全体にクリックイベントを設定
+    document.addEventListener('mousedown', handleClickOutside);
+
+    // クリーンアップ関数
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isUserMenuOpen]); // isUserMenuOpenが変わるたびにイベントリスナーを更新
 
   const handleLogout = () => {
     if (confirm('ログアウトしますか？')) {
@@ -87,7 +103,11 @@ export const Header = () => {
                 Pro Plan
               </button>
 
-              <div className="relative">
+              {/* 
+                 ユーザーアイコンとメニューを囲む親要素に ref={menuRef} を設定 
+                 ここに含まれない場所をクリックするとメニューが閉じます
+              */}
+              <div className="relative" ref={menuRef}>
                 {/* アイコンボタン */}
                 <button 
                   onClick={toggleUserMenu}
@@ -100,7 +120,7 @@ export const Header = () => {
                          src={userInfo.picture} 
                          alt="User Icon" 
                          className="w-full h-full object-cover"
-                         referrerPolicy="no-referrer" // Google画像を表示する際のリファラ対策
+                         referrerPolicy="no-referrer"
                        />
                      ) : (
                        <span className="font-bold text-blue-600 text-sm">U</span>
@@ -110,48 +130,40 @@ export const Header = () => {
 
                 {/* メニュー */}
                 {isUserMenuOpen && (
-                  <>
-                    <div 
-                      className="fixed inset-0 z-10 cursor-default" 
-                      onClick={() => setIsUserMenuOpen(false)}
-                    ></div>
-
-                    <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-100 py-1 z-20 animate-in fade-in zoom-in-95 duration-100">
-                      <div className="px-4 py-3 border-b border-gray-100">
-                        <p className="text-xs text-gray-500">ログイン中</p>
-                        {/* 実際のメールアドレスを表示 */}
-                        <p className="text-sm font-bold text-gray-800 truncate" title={userInfo.email}>
-                          {userInfo.email || 'unknown user'}
-                        </p>
-                      </div>
-                      
-                      <div className="py-1">
-                        <Link 
-                          href="/profile" 
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                          onClick={() => setIsUserMenuOpen(false)}
-                        >
-                          プロフィール設定
-                        </Link>
-                        <Link 
-                          href="/dashboard" 
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                          onClick={() => setIsUserMenuOpen(false)}
-                        >
-                          ダッシュボード
-                        </Link>
-                      </div>
-
-                      <div className="border-t border-gray-100 py-1">
-                        <button 
-                          onClick={handleLogout}
-                          className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition"
-                        >
-                          ログアウト
-                        </button>
-                      </div>
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-100 py-1 z-20 animate-in fade-in zoom-in-95 duration-100">
+                    <div className="px-4 py-3 border-b border-gray-100">
+                      <p className="text-xs text-gray-500">ログイン中</p>
+                      <p className="text-sm font-bold text-gray-800 truncate" title={userInfo.email}>
+                        {userInfo.email || 'unknown user'}
+                      </p>
                     </div>
-                  </>
+                    
+                    <div className="py-1">
+                      <Link 
+                        href="/profile" 
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        onClick={() => setIsUserMenuOpen(false)}
+                      >
+                        プロフィール設定
+                      </Link>
+                      <Link 
+                        href="/dashboard" 
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        onClick={() => setIsUserMenuOpen(false)}
+                      >
+                        ダッシュボード
+                      </Link>
+                    </div>
+
+                    <div className="border-t border-gray-100 py-1">
+                      <button 
+                        onClick={handleLogout}
+                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition"
+                      >
+                        ログアウト
+                      </button>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
