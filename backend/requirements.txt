@@ -11,3 +11,4 @@ itsdangerous
 python-jose[cryptography]
 httpx
 firebase-admin
+microcms-js-sdk

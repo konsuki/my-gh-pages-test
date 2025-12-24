@@ -93,6 +93,7 @@ export const Header = () => {
           <Link href="/LP#features" className="hover:text-blue-600 transition">機能</Link>
           <Link href="/LP#usecases" className="hover:text-blue-600 transition">活用事例</Link>
           <Link href="/LP#pricing" className="hover:text-blue-600 transition">料金</Link>
+          <Link href="/blog" className="hover:text-blue-600 transition">ブログ</Link>
         </nav>
 
         {/* 右側アクションエリア */}
