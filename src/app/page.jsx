@@ -5,11 +5,14 @@ import { Header } from '../components/Header';
 import { CommentDisplay } from '../components/CommentDisplay';
 import { CommentSearch } from '../components/CommentSearch'; 
 import { VideoUrlInput } from '../components/VideoUrlInput';
-import { LimitModal } from '../components/LimitModal'; // ★ 1. 追加インポート
+import { LimitModal } from '../components/LimitModal';
 
-// FastAPIのURL (開発環境に合わせて変更してください)
-const YOUTUBE_API_URL = 'http://localhost:8000/api/comments'; 
-// const YOUTUBE_API_URL = 'https://backend-904463184290.asia-northeast1.run.app/api/comments';
+/**
+ * API接続先の設定
+ * NEXT_PUBLIC_API_URL が未定義の場合はローカル環境(http://localhost:8000)を使用します。
+ */
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const COMMENTS_API_ENDPOINT = `${API_BASE_URL}/api/comments`;
 
 export default function Home() {
   const [apiData, setApiData] = useState(null);
@@ -17,7 +20,7 @@ export default function Home() {
   const [error, setError] = useState(null);
   const [searchResult, setSearchResult] = useState(null);
   
-  // ★ 2. モーダル表示用のStateを追加
+  // 制限モーダル表示用のState
   const [showLimitModal, setShowLimitModal] = useState(false);
 
   const fetchComments = async (videoId) => {
@@ -25,44 +28,39 @@ export default function Home() {
     setApiData(null);
     setLoading(true);
     setError(null);
-    setShowLimitModal(false); // リセット
+    setShowLimitModal(false);
 
     try {
-      // ★ 3. ローカルストレージからJWTトークンを取得
-      // (ログイン成功時に 'accessToken' というキーで保存されている前提)
+      // ローカルストレージからJWTトークンを取得
       const token = localStorage.getItem('accessToken');
 
       if (!token) {
-        // 未ログインなら先にエラーにするか、ログイン画面へ飛ばす
         setError("ログインが必要です。右上のボタンからログインしてください。");
         setLoading(false);
         return;
       }
 
-      const url = `${YOUTUBE_API_URL}?video_id=${videoId}`;
+      // 整理した変数を使用してURLを構築
+      const url = `${COMMENTS_API_ENDPOINT}?video_id=${videoId}`;
       
       const response = await fetch(url, {
-        method: 'GET', // GETリクエストでもHeaderは送れます
+        method: 'GET',
         headers: {
-            // ★ 4. ヘッダーにトークンを付与
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
         }
       });
 
-      // ★ 5. サーバーからのステータスコードをチェック
+      // ステータスコードに応じたエラーハンドリング
       if (response.status === 402) {
-        // 402 Payment Required = 制限回数オーバー
         console.warn("利用制限に達しました");
-        setShowLimitModal(true); // モーダルを表示
+        setShowLimitModal(true);
         setLoading(false);
-        return; // ここで処理終了
+        return;
       }
       
       if (response.status === 401) {
-        // 401 Unauthorized = トークン切れ or 無効
         setError("ログインセッションが切れました。再ログインしてください。");
-        // localStorage.removeItem('accessToken'); // 必要なら消す
         setLoading(false);
         return;
       }
@@ -83,7 +81,6 @@ export default function Home() {
     }
   };
 
-
   return (
     <div className="container mx-auto p-4 md:p-8">
       <Header/>
@@ -97,10 +94,7 @@ export default function Home() {
         loading={loading} 
       />
 
-      {/* 
-         ★ 6. 制限モーダルを配置
-         showLimitModal が true の時だけ表示されます
-      */}
+      {/* 制限モーダル */}
       <LimitModal 
         isOpen={showLimitModal} 
         onClose={() => setShowLimitModal(false)} 
