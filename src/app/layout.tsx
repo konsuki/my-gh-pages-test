@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+// 1. ここに追加
+import { GoogleAnalytics } from '@next/third-parties/google';
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains" });
@@ -25,6 +27,9 @@ export default function RootLayout({
           {children}
         </main>
       </body>
+      
+      {/* 2. ここに追加 (G-XXXXXXXXXX は自分のIDに書き換えてください) */}
+      <GoogleAnalytics gaId="G-JMYZC94M1X" />
     </html>
   );
 }
